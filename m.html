@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Racing Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .nav-item {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+        
+        .nav-item.active::after,
+        .nav-item:hover::after {
+            width: 100%;
+        }
+        
+        .nav-item.active {
+            color: #3b82f6;
+        }
+        
+        .logo-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .nav-shadow {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        .table-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        .search-highlight {
+            background-color: #fef3c7;
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="bg-white nav-shadow sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold logo-gradient">RaceTrack Pro</span>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="nav-item active text-gray-700 hover:text-blue-600 font-medium px-3 py-2 transition-colors duration-200" onclick="showPage('home', this)">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                            </svg>
+                            <span>Home</span>
+                        </div>
+                    </a>
+                    
+                    <a href="#" class="nav-item text-gray-700 hover:text-blue-600 font-medium px-3 py-2 transition-colors duration-200" onclick="showPage('driver-report', this)">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            <span>Driver Report</span>
+                        </div>
+                    </a>
+                    
+                    <a href="#" class="nav-item text-gray-700 hover:text-blue-600 font-medium px-3 py-2 transition-colors duration-200" onclick="showPage('track-report', this)">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00-2-2m0 0V5a2 2 0 012-2h2a2 2 0 00-2-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"/>
+                            </svg>
+                            <span>Track Report</span>
+                        </div>
+                    </a>
+                    
+                    <a href="#" class="nav-item text-gray-700 hover:text-blue-600 font-medium px-3 py-2 transition-colors duration-200" onclick="showPage('info', this)">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>Info</span>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button class="text-gray-700 hover:text-blue-600 focus:outline-none focus:text-blue-600 transition-colors duration-200" onclick="toggleMobileMenu()">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="md:hidden hidden bg-white border-t border-gray-200">
+            <div class="px-4 py-3 space-y-3">
+                <a href="#" class="mobile-nav-item active flex items-center space-x-3 text-gray-700 hover:text-blue-600 font-medium py-2 transition-colors duration-200" onclick="showPageMobile('home', this)">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    <span>Home</span>
+                </a>
+                
+                <a href="#" class="mobile-nav-item flex items-center space-x-3 text-gray-700 hover:text-blue-600 font-medium py-2 transition-colors duration-200" onclick="showPageMobile('driver-report', this)">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    <span>Driver Report</span>
+                </a>
+                
+                <a href="#" class="mobile-nav-item flex items-center space-x-3 text-gray-700 hover:text-blue-600 font-medium py-2 transition-colors duration-200" onclick="showPageMobile('track-report', this)">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00-2-2m0 0V5a2 2 0 012-2h2a2 2 0 00-2-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"/>
+                    </svg>
+                    <span>Track Report</span>
+                </a>
+                
+                <a href="#" class="mobile-nav-item flex items-center space-x-3 text-gray-700 hover:text-blue-600 font-medium py-2 transition-colors duration-200" onclick="showPageMobile('info', this)">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Info</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Home Page -->
+    <div id="home" class="page active">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">Welcome to RaceTrack Pro</h1>
+                <p class="text-gray-600 text-lg">Select a section from the navigation above to get started with your racing analytics.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg">
+                        <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Dashboard</h3>
+                        <p class="text-gray-600 text-sm">Overview of all racing activities</p>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg">
+                        <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Driver Analytics</h3>
+                        <p class="text-gray-600 text-sm">Performance metrics and statistics</p>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg">
+                        <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00-2-2m0 0V5a2 2 0 012-2h2a2 2 0 00-2-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Track Data</h3>
+                        <p class="text-gray-600 text-sm">Lap times and track conditions</p>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-lg">
+                        <div class="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Information</h3>
+                        <p class="text-gray-600 text-sm">Help and system information</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Driver Report Page -->
+    <div id="driver-report" class="page">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <!-- Header -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 mb-2">Driver Reports</h1>
+                        <p class="text-gray-600">Search and view all driver information from Google Sheets</p>
+                    </div>
+                    <button onclick="loadDriverData()" class="mt-4 sm:mt-0 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span>Refresh Data</span>
+                    </button>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="mb-6">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <input type="text" id="searchInput" placeholder="Search by Driver ID, Mobile Number, Name, or any field..." 
+                               class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                               oninput="searchDrivers()">
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-lg text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-blue-100 text-sm">Total Drivers</p>
+                                <p class="text-2xl font-bold" id="totalDrivers">0</p>
+                            </div>
+                            <svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-green-100 text-sm">Active Drivers</p>
+                                <p class="text-2xl font-bold" id="activeDrivers">0</p>
+                            </div>
+                            <svg class="w-8 h-8 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-4 rounded-lg text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-purple-100 text-sm">Search Results</p>
+                                <p class="text-2xl font-bold" id="searchResults">0</p>
+                            </div>
+                            <svg class="w-8 h-8 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center py-12">
+                    <div class="loading-spinner mx-auto mb-4"></div>
+                    <p class="text-gray-600">Loading driver data from Google Sheets...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="errorState" class="hidden text-center py-12">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Connection Error</h3>
+                    <p class="text-gray-600 mb-4">Unable to connect to Google Sheets. Please check your connection and try again.</p>
+                    <button onclick="loadDriverData()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        Try Again
+                    </button>
+                </div>
+
+                <!-- Table Container -->
+                <div id="tableContainer" class="hidden">
+                    <div class="table-container border border-gray-200 rounded-lg overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr id="tableHeader">
+                                    <!-- Dynamic headers will be inserted here -->
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Dynamic rows will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- No Results Message -->
+                    <div id="noResults" class="hidden text-center py-8">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Results Found</h3>
+                        <p class="text-gray-600">Try adjusting your search terms or clear the search to see all drivers.</p>
+                    </div>
+                </div>
+
+                <!-- Google Sheets Setup Instructions -->
+                <div id="setupInstructions" class="hidden mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-3">Google Sheets Setup Required</h3>
+                    <div class="text-blue-800 space-y-2">
+                        <p><strong>To connect your Google Sheet:</strong></p>
+                        <ol class="list-decimal list-inside space-y-1 ml-4">
+                            <li>Open your Google Sheet with driver data</li>
+                            <li>Click "Share" and set to "Anyone with the link can view"</li>
+                            <li>Copy the sheet ID from the URL</li>
+                            <li>Update the SHEET_ID variable in the code</li>
+                            <li>Ensure your sheet has headers in the first row</li>
+                        </ol>
+                        <p class="mt-3"><strong>Expected columns:</strong> Driver ID, Name, Mobile Number, Email, Status, License Type, etc.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Track Report Page -->
+    <div id="track-report" class="page">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <!-- Header -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 mb-2">Track Reports</h1>
+                        <p class="text-gray-600">Search and view all track performance data from Google Sheets</p>
+                    </div>
+                    <button onclick="loadTrackData()" class="mt-4 sm:mt-0 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span>Refresh Data</span>
+                    </button>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="mb-6">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <input type="text" id="trackSearchInput" placeholder="Search by Track ID, Race Date, Driver Name, Lap Time, or any field..." 
+                               class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                               oninput="searchTracks()">
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-4 rounded-lg text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-purple-100 text-sm">Total Records</p>
+                                <p class="text-2xl font-bold" id="totalTracks">0</p>
+                            </div>
+                            <svg class="w-8 h-8 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00-2-2m0 0V5a2 2 0 012-2h2a2 2 0 00-2-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-green-100 text-sm">Active Tracks</p>
+                                <p class="text-2xl font-bold" id="activeTracks">0</p>
+                            </div>
+                            <svg class="w-8 h-8 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-lg text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-blue-100 text-sm">Best Lap Time</p>
+                                <p class="text-2xl font-bold" id="bestLapTime">--:--</p>
+                            </div>
+                            <svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-4 rounded-lg text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-orange-100 text-sm">Search Results</p>
+                                <p class="text-2xl font-bold" id="trackSearchResults">0</p>
+                            </div>
+                            <svg class="w-8 h-8 text-orange-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="trackLoadingState" class="text-center py-12">
+                    <div class="loading-spinner mx-auto mb-4"></div>
+                    <p class="text-gray-600">Loading track data from Google Sheets...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="trackErrorState" class="hidden text-center py-12">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Connection Error</h3>
+                    <p class="text-gray-600 mb-4">Unable to connect to Google Sheets. Please check your connection and try again.</p>
+                    <button onclick="loadTrackData()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
+                        Try Again
+                    </button>
+                </div>
+
+                <!-- Table Container -->
+                <div id="trackTableContainer" class="hidden">
+                    <div class="table-container border border-gray-200 rounded-lg overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr id="trackTableHeader">
+                                    <!-- Dynamic headers will be inserted here -->
+                                </tr>
+                            </thead>
+                            <tbody id="trackTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Dynamic rows will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- No Results Message -->
+                    <div id="trackNoResults" class="hidden text-center py-8">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Results Found</h3>
+                        <p class="text-gray-600">Try adjusting your search terms or clear the search to see all track records.</p>
+                    </div>
+                </div>
+
+                <!-- Google Sheets Setup Instructions -->
+                <div id="trackSetupInstructions" class="hidden mt-8 bg-purple-50 border border-purple-200 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-purple-900 mb-3">Google Sheets Setup Required</h3>
+                    <div class="text-purple-800 space-y-2">
+                        <p><strong>To connect your Track Data Google Sheet:</strong></p>
+                        <ol class="list-decimal list-inside space-y-1 ml-4">
+                            <li>Open your Google Sheet with track performance data</li>
+                            <li>Click "Share" and set to "Anyone with the link can view"</li>
+                            <li>Copy the sheet ID from the URL</li>
+                            <li>Update the TRACK_SHEET_ID variable in the code</li>
+                            <li>Ensure your sheet has headers in the first row</li>
+                        </ol>
+                        <p class="mt-3"><strong>Expected columns:</strong> Track ID, Race Date, Driver Name, Lap Time, Position, Track Name, Weather, etc.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Info Page -->
+    <div id="info" class="page">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">Information</h1>
+                <p class="text-gray-600 text-lg">System information and help documentation.</p>
+                <div class="mt-8 p-8 bg-gray-50 rounded-lg">
+                    <p class="text-gray-500">Information section coming soon...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Sample driver data (replace with actual Google Sheets data)
+        let driverData = [];
+        let filteredData = [];
+        
+        // Track data variables
+        let trackData = [];
+        let filteredTrackData = [];
+        
+        // Google Sheets configuration
+        const SHEET_ID = '16-xS5z1h5sZ4fjevwJwenZRP0XyZXng7OCPEwIYc0_8'; // Replace with your actual sheet ID
+        const SHEET_NAME = 'Sheet1'; // Replace with your sheet name
+        const API_KEY = 'AIzaSyDAAeqAXfPG4q38YiYif0a_62bsO_zQa6U'; // Replace with your Google Sheets API key
+        
+        // Track data Google Sheets configuration
+        const TRACK_SHEET_ID = '16-xS5z1h5sZ4fjevwJwenZRP0XyZXng7OCPEwIYc0_8'; // Replace with your track data sheet ID
+        const TRACK_SHEET_NAME = 'Sheet1'; // Replace with your track sheet name
+        
+        // Sample data for demonstration
+        // const sampleDriverData = [
+        //     {
+        //         'Driver ID': 'D001',
+        //         'Name': 'John Smith',
+        //         'Mobile Number': '+1234567890',
+        //         'Email': 'john.smith@email.com',
+        //         'Status': 'Active',
+        //         'License Type': 'Professional',
+        //         'Experience': '5 years',
+        //         'Last Race': '2024-01-15',
+        //         'Total Races': '45',
+        //         'Wins': '12'
+        //     },
+        //     {
+        //         'Driver ID': 'D002',
+        //         'Name': 'Sarah Johnson',
+        //         'Mobile Number': '+1234567891',
+        //         'Email': 'sarah.johnson@email.com',
+        //         'Status': 'Active',
+        //         'License Type': 'Amateur',
+        //         'Experience': '2 years',
+        //         'Last Race': '2024-01-10',
+        //         'Total Races': '18',
+        //         'Wins': '3'
+        //     },
+        //     {
+        //         'Driver ID': 'D003',
+        //         'Name': 'Mike Wilson',
+        //         'Mobile Number': '+1234567892',
+        //         'Email': 'mike.wilson@email.com',
+        //         'Status': 'Inactive',
+        //         'License Type': 'Professional',
+        //         'Experience': '8 years',
+        //         'Last Race': '2023-12-20',
+        //         'Total Races': '67',
+        //         'Wins': '23'
+        //     },
+        //     {
+        //         'Driver ID': 'D004',
+        //         'Name': 'Emily Davis',
+        //         'Mobile Number': '+1234567893',
+        //         'Email': 'emily.davis@email.com',
+        //         'Status': 'Active',
+        //         'License Type': 'Semi-Pro',
+        //         'Experience': '3 years',
+        //         'Last Race': '2024-01-12',
+        //         'Total Races': '28',
+        //         'Wins': '7'
+        //     },
+        //     {
+        //         'Driver ID': 'D005',
+        //         'Name': 'Alex Rodriguez',
+        //         'Mobile Number': '+1234567894',
+        //         'Email': 'alex.rodriguez@email.com',
+        //         'Status': 'Active',
+        //         'License Type': 'Amateur',
+        //         'Experience': '1 year',
+        //         'Last Race': '2024-01-08',
+        //         'Total Races': '8',
+        //         'Wins': '1'
+        //     }
+        // ];
+
+        // Sample track data for demonstration
+        // const sampleTrackData = [
+        //     {
+        //         'Track ID': 'T001',
+        //         'Race Date': '2024-01-15',
+        //         'Driver Name': 'John Smith',
+        //         'Driver ID': 'D001',
+        //         'Track Name': 'Silverstone Circuit',
+        //         'Lap Time': '1:23.456',
+        //         'Position': '1',
+        //         'Weather': 'Sunny',
+        //         'Temperature': '22°C',
+        //         'Tire Type': 'Soft',
+        //         'Fuel Load': '50kg',
+        //         'Top Speed': '312 km/h'
+        //     },
+        //     {
+        //         'Track ID': 'T002',
+        //         'Race Date': '2024-01-15',
+        //         'Driver Name': 'Sarah Johnson',
+        //         'Driver ID': 'D002',
+        //         'Track Name': 'Silverstone Circuit',
+        //         'Lap Time': '1:24.123',
+        //         'Position': '2',
+        //         'Weather': 'Sunny',
+        //         'Temperature': '22°C',
+        //         'Tire Type': 'Medium',
+        //         'Fuel Load': '52kg',
+        //         'Top Speed': '308 km/h'
+        //     },
+        //     {
+        //         'Track ID': 'T003',
+        //         'Race Date': '2024-01-12',
+        //         'Driver Name': 'Mike Wilson',
+        //         'Driver ID': 'D003',
+        //         'Track Name': 'Monaco Street Circuit',
+        //         'Lap Time': '1:15.789',
+        //         'Position': '1',
+        //         'Weather': 'Cloudy',
+        //         'Temperature': '18°C',
+        //         'Tire Type': 'Soft',
+        //         'Fuel Load': '48kg',
+        //         'Top Speed': '285 km/h'
+        //     },
+        //     {
+        //         'Track ID': 'T004',
+        //         'Race Date': '2024-01-12',
+        //         'Driver Name': 'Emily Davis',
+        //         'Driver ID': 'D004',
+        //         'Track Name': 'Monaco Street Circuit',
+        //         'Lap Time': '1:16.234',
+        //         'Position': '3',
+        //         'Weather': 'Cloudy',
+        //         'Temperature': '18°C',
+        //         'Tire Type': 'Medium',
+        //         'Fuel Load': '49kg',
+        //         'Top Speed': '282 km/h'
+        //     },
+        //     {
+        //         'Track ID': 'T005',
+        //         'Race Date': '2024-01-10',
+        //         'Driver Name': 'Alex Rodriguez',
+        //         'Driver ID': 'D005',
+        //         'Track Name': 'Spa-Francorchamps',
+        //         'Lap Time': '2:05.567',
+        //         'Position': '2',
+        //         'Weather': 'Rainy',
+        //         'Temperature': '15°C',
+        //         'Tire Type': 'Wet',
+        //         'Fuel Load': '55kg',
+        //         'Top Speed': '298 km/h'
+        //     },
+        //     {
+        //         'Track ID': 'T006',
+        //         'Race Date': '2024-01-10',
+        //         'Driver Name': 'John Smith',
+        //         'Driver ID': 'D001',
+        //         'Track Name': 'Spa-Francorchamps',
+        //         'Lap Time': '2:04.891',
+        //         'Position': '1',
+        //         'Weather': 'Rainy',
+        //         'Temperature': '15°C',
+        //         'Tire Type': 'Wet',
+        //         'Fuel Load': '53kg',
+        //         'Top Speed': '301 km/h'
+        //     },
+        //     {
+        //         'Track ID': 'T007',
+        //         'Race Date': '2024-01-08',
+        //         'Driver Name': 'Sarah Johnson',
+        //         'Driver ID': 'D002',
+        //         'Track Name': 'Monza Circuit',
+        //         'Lap Time': '1:21.345',
+        //         'Position': '1',
+        //         'Weather': 'Sunny',
+        //         'Temperature': '25°C',
+        //         'Tire Type': 'Soft',
+        //         'Fuel Load': '47kg',
+        //         'Top Speed': '335 km/h'
+        //     },
+        //     {
+        //         'Track ID': 'T008',
+        //         'Race Date': '2024-01-08',
+        //         'Driver Name': 'Mike Wilson',
+        //         'Driver ID': 'D003',
+        //         'Track Name': 'Monza Circuit',
+        //         'Lap Time': '1:21.678',
+        //         'Position': '2',
+        //         'Weather': 'Sunny',
+        //         'Temperature': '25°C',
+        //         'Tire Type': 'Medium',
+        //         'Fuel Load': '48kg',
+        //         'Top Speed': '332 km/h'
+        //     }
+        // ];
+
+        function showPage(pageId, element) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show selected page
+            document.getElementById(pageId).classList.add('active');
+            
+            // Update navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            // Load data based on selected page
+            if (pageId === 'driver-report') {
+                loadDriverData();
+            } else if (pageId === 'track-report') {
+                loadTrackData();
+            }
+        }
+
+        function showPageMobile(pageId, element) {
+            showPage(pageId, element);
+            
+            // Update mobile navigation
+            document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            // Close mobile menu
+            document.getElementById('mobileMenu').classList.add('hidden');
+        }
+
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('hidden');
+        }
+
+        async function loadDriverData() {
+            const loadingState = document.getElementById('loadingState');
+            const errorState = document.getElementById('errorState');
+            const tableContainer = document.getElementById('tableContainer');
+            const setupInstructions = document.getElementById('setupInstructions');
+            
+            // Show loading state
+            loadingState.classList.remove('hidden');
+            errorState.classList.add('hidden');
+            tableContainer.classList.add('hidden');
+            setupInstructions.classList.add('hidden');
+            
+            try {
+                // For demo purposes, we'll use sample data
+                // In a real implementation, you would fetch from Google Sheets API
+                
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Check if Google Sheets is configured
+                if (SHEET_ID === '16-xS5z1h5sZ4fjevwJwenZRP0XyZXng7OCPEwIYc0_8') {
+                    // Use sample data for demo
+                    driverData = sampleDriverData;
+                    filteredData = [...driverData];
+                    
+                    // Show setup instructions
+                    setupInstructions.classList.remove('hidden');
+                } else {
+                    // Attempt to fetch from Google Sheets
+                    const response = await fetchGoogleSheetsData();
+                    driverData = response;
+                    filteredData = [...driverData];
+                }
+                
+                // Hide loading state
+                loadingState.classList.add('hidden');
+                
+                // Display data
+                displayDriverData();
+                updateStats();
+                
+            } catch (error) {
+                console.error('Error loading driver data:', error);
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+            }
+        }
+
+        async function fetchGoogleSheetsData() {
+            // This is a placeholder for actual Google Sheets API integration
+            // You would implement the actual API call here
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Failed to fetch data from Google Sheets');
+            }
+            
+            const data = await response.json();
+            const rows = data.values;
+            
+            if (!rows || rows.length === 0) {
+                throw new Error('No data found in the sheet');
+            }
+            
+            // Convert rows to objects using first row as headers
+            const headers = rows[0];
+            const dataRows = rows.slice(1);
+            
+            return dataRows.map(row => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = row[index] || '';
+                });
+                return obj;
+            });
+        }
+
+        function displayDriverData() {
+            const tableContainer = document.getElementById('tableContainer');
+            const tableHeader = document.getElementById('tableHeader');
+            const tableBody = document.getElementById('tableBody');
+            const noResults = document.getElementById('noResults');
+            
+            if (filteredData.length === 0) {
+                tableContainer.classList.add('hidden');
+                noResults.classList.remove('hidden');
+                return;
+            }
+            
+            noResults.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            
+            // Create table headers
+            if (filteredData.length > 0) {
+                const headers = Object.keys(filteredData[0]);
+                tableHeader.innerHTML = headers.map(header => 
+                    `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${header}</th>`
+                ).join('');
+            }
+            
+            // Create table rows
+            tableBody.innerHTML = filteredData.map((driver, index) => {
+                const values = Object.values(driver);
+                const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                
+                return `
+                    <tr class="${rowClass} hover:bg-blue-50 transition-colors duration-150">
+                        ${values.map(value => {
+                            // Highlight search terms
+                            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                            let displayValue = value;
+                            
+                            if (searchTerm && value.toString().toLowerCase().includes(searchTerm)) {
+                                const regex = new RegExp(`(${searchTerm})`, 'gi');
+                                displayValue = value.toString().replace(regex, '<span class="search-highlight">$1</span>');
+                            }
+                            
+                            return `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${displayValue}</td>`;
+                        }).join('')}
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function searchDrivers() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (!searchTerm) {
+                filteredData = [...driverData];
+            } else {
+                filteredData = driverData.filter(driver => {
+                    return Object.values(driver).some(value => 
+                        value.toString().toLowerCase().includes(searchTerm)
+                    );
+                });
+            }
+            
+            displayDriverData();
+            updateStats();
+        }
+
+        function updateStats() {
+            const totalDrivers = driverData.length;
+            const activeDrivers = driverData.filter(driver => 
+                driver.Status && driver.Status.toLowerCase() === 'active'
+            ).length;
+            const searchResults = filteredData.length;
+            
+            document.getElementById('totalDrivers').textContent = totalDrivers;
+            document.getElementById('activeDrivers').textContent = activeDrivers;
+            document.getElementById('searchResults').textContent = searchResults;
+        }
+
+        // Track data functions
+        async function loadTrackData() {
+            const loadingState = document.getElementById('trackLoadingState');
+            const errorState = document.getElementById('trackErrorState');
+            const tableContainer = document.getElementById('trackTableContainer');
+            const setupInstructions = document.getElementById('trackSetupInstructions');
+            
+            // Show loading state
+            loadingState.classList.remove('hidden');
+            errorState.classList.add('hidden');
+            tableContainer.classList.add('hidden');
+            setupInstructions.classList.add('hidden');
+            
+            try {
+                // For demo purposes, we'll use sample data
+                // In a real implementation, you would fetch from Google Sheets API
+                
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Check if Google Sheets is configured
+                if (TRACK_SHEET_ID === 'YOUR_TRACK_SHEET_ID_HERE') {
+                    // Use sample data for demo
+                    trackData = sampleTrackData;
+                    filteredTrackData = [...trackData];
+                    
+                    // Show setup instructions
+                    setupInstructions.classList.remove('hidden');
+                } else {
+                    // Attempt to fetch from Google Sheets
+                    const response = await fetchTrackGoogleSheetsData();
+                    trackData = response;
+                    filteredTrackData = [...trackData];
+                }
+                
+                // Hide loading state
+                loadingState.classList.add('hidden');
+                
+                // Display data
+                displayTrackData();
+                updateTrackStats();
+                
+            } catch (error) {
+                console.error('Error loading track data:', error);
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+            }
+        }
+
+        async function fetchTrackGoogleSheetsData() {
+            // This is a placeholder for actual Google Sheets API integration
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${TRACK_SHEET_ID}/values/${TRACK_SHEET_NAME}?key=${API_KEY}`;
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Failed to fetch track data from Google Sheets');
+            }
+            
+            const data = await response.json();
+            const rows = data.values;
+            
+            if (!rows || rows.length === 0) {
+                throw new Error('No track data found in the sheet');
+            }
+            
+            // Convert rows to objects using first row as headers
+            const headers = rows[0];
+            const dataRows = rows.slice(1);
+            
+            return dataRows.map(row => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = row[index] || '';
+                });
+                return obj;
+            });
+        }
+
+        function displayTrackData() {
+            const tableContainer = document.getElementById('trackTableContainer');
+            const tableHeader = document.getElementById('trackTableHeader');
+            const tableBody = document.getElementById('trackTableBody');
+            const noResults = document.getElementById('trackNoResults');
+            
+            if (filteredTrackData.length === 0) {
+                tableContainer.classList.add('hidden');
+                noResults.classList.remove('hidden');
+                return;
+            }
+            
+            noResults.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            
+            // Create table headers
+            if (filteredTrackData.length > 0) {
+                const headers = Object.keys(filteredTrackData[0]);
+                tableHeader.innerHTML = headers.map(header => 
+                    `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${header}</th>`
+                ).join('');
+            }
+            
+            // Create table rows
+            tableBody.innerHTML = filteredTrackData.map((track, index) => {
+                const values = Object.values(track);
+                const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                
+                return `
+                    <tr class="${rowClass} hover:bg-purple-50 transition-colors duration-150">
+                        ${values.map(value => {
+                            // Highlight search terms
+                            const searchTerm = document.getElementById('trackSearchInput').value.toLowerCase();
+                            let displayValue = value;
+                            
+                            if (searchTerm && value.toString().toLowerCase().includes(searchTerm)) {
+                                const regex = new RegExp(`(${searchTerm})`, 'gi');
+                                displayValue = value.toString().replace(regex, '<span class="search-highlight">$1</span>');
+                            }
+                            
+                            return `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${displayValue}</td>`;
+                        }).join('')}
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function searchTracks() {
+            const searchTerm = document.getElementById('trackSearchInput').value.toLowerCase();
+            
+            if (!searchTerm) {
+                filteredTrackData = [...trackData];
+            } else {
+                filteredTrackData = trackData.filter(track => {
+                    return Object.values(track).some(value => 
+                        value.toString().toLowerCase().includes(searchTerm)
+                    );
+                });
+            }
+            
+            displayTrackData();
+            updateTrackStats();
+        }
+
+        function updateTrackStats() {
+            const totalTracks = trackData.length;
+            const activeTracks = new Set(trackData.map(track => track['Track Name'])).size;
+            const searchResults = filteredTrackData.length;
+            
+            // Find best lap time
+            let bestLapTime = '--:--';
+            if (trackData.length > 0) {
+                const lapTimes = trackData
+                    .map(track => track['Lap Time'])
+                    .filter(time => time && time.includes(':'))
+                    .sort();
+                if (lapTimes.length > 0) {
+                    bestLapTime = lapTimes[0];
+                }
+            }
+            
+            document.getElementById('totalTracks').textContent = totalTracks;
+            document.getElementById('activeTracks').textContent = activeTracks;
+            document.getElementById('bestLapTime').textContent = bestLapTime;
+            document.getElementById('trackSearchResults').textContent = searchResults;
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load data based on active page
+            if (document.getElementById('driver-report').classList.contains('active')) {
+                loadDriverData();
+            } else if (document.getElementById('track-report').classList.contains('active')) {
+                loadTrackData();
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9737d41772d5c70f',t:'MTc1NTkyMjk0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
